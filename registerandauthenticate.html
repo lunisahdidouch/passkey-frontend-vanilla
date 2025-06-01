@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAuthn Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; }
+        .container { max-width: 500px; margin: 30px auto; padding: 20px; }
+        label { display: block; margin-bottom: 8px; }
+        input[type="text"] { width: 100%; padding: 8px; margin-bottom: 16px; border-radius: 4px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 4px; word-break: break-word; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container bg-white p-8 rounded-lg shadow-md">
+        <div class="flex justify-center mb-6 space-x-4">
+            <button id="btnShowRegisterView" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md">Register</button>
+            <button id="btnShowLoginView" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md">Login</button>
+        </div>
+
+        <div id="registerView">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Register New Passkey</h1>
+            <div class="mb-4">
+                <label for="regUsername" class="block text-sm font-medium text-gray-700">Username:</label>
+                <input type="text" id="regUsername" value="testuser" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            </div>
+            <div class="mb-6">
+                <label for="regDisplayName" class="block text-sm font-medium text-gray-700">Display Name (for authenticator):</label>
+                <input type="text" id="regDisplayName" value="Test User Device" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            </div>
+            <button id="btnRegister" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">
+                Start Registration
+            </button>
+        </div>
+
+        <div id="loginView" class="hidden">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Login with Passkey</h1>
+            <div class="mb-4">
+                <label for="authUsername" class="block text-sm font-medium text-gray-700">Username (optional for passkeys):</label>
+                <input type="text" id="authUsername" placeholder="Leave blank for passkey-first login" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            </div>
+            <button id="btnLogin" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">
+                Login with Passkey
+            </button>
+        </div>
+
+        <div id="loggedInView" class="hidden">
+            <h1 class="text-2xl font-bold mb-6 text-center text-green-600">Successfully Logged In!</h1>
+            <p class="text-center text-gray-700">Welcome, <span id="loggedInUsername" class="font-semibold"></span>!</p>
+            <button id="btnLogout" class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md">Logout</button>
+        </div>
+
+        <div id="messageArea" class="mt-6"></div>
+    </div>
+
+    <script>
+        if (typeof SimpleWebAuthnBrowser === 'undefined') {
+            console.error('SimpleWebAuthnBrowser is not loaded. Check the script tag.');
+            alert('Error: WebAuthn library not loaded.');
+        }
+
+        const { startRegistration, startAuthentication, browserSupportsWebAuthn } = SimpleWebAuthnBrowser;
+
+        const elemRegUsername = document.getElementById('regUsername');
+        const elemRegDisplayName = document.getElementById('regDisplayName');
+        const btnRegister = document.getElementById('btnRegister');
+
+        const elemAuthUsername = document.getElementById('authUsername');
+        const btnLogin = document.getElementById('btnLogin');
+
+        const registerView = document.getElementById('registerView');
+        const loginView = document.getElementById('loginView');
+        const loggedInView = document.getElementById('loggedInView');
+        const loggedInUsernameSpan = document.getElementById('loggedInUsername');
+        const btnLogout = document.getElementById('btnLogout');
+
+        const btnShowRegisterView = document.getElementById('btnShowRegisterView');
+        const btnShowLoginView = document.getElementById('btnShowLoginView');
+
+        const messageArea = document.getElementById('messageArea');
+
+        function showView(viewToShow) {
+            registerView.classList.add('hidden');
+            loginView.classList.add('hidden');
+            loggedInView.classList.add('hidden');
+            messageArea.innerHTML = '';
+
+            if (viewToShow === 'register') {
+                registerView.classList.remove('hidden');
+            } else if (viewToShow === 'login') {
+                loginView.classList.remove('hidden');
+            } else if (viewToShow === 'loggedIn') {
+                loggedInView.classList.remove('hidden');
+            }
+        }
+
+        btnShowRegisterView.addEventListener('click', () => showView('register'));
+        btnShowLoginView.addEventListener('click', () => showView('login'));
+        btnLogout.addEventListener('click', () => {
+            showView('login'); 
+            showMessage('You have been logged out.', 'info');
+        });
+
+
+        if (!browserSupportsWebAuthn()) {
+            showMessage('This browser does not support WebAuthn.', 'error');
+            btnRegister.disabled = true;
+            btnLogin.disabled = true;
+        }
+
+        btnRegister.addEventListener('click', async () => {
+            showMessage('');
+            const username = elemRegUsername.value;
+            const displayName = elemRegDisplayName.value;
+
+            if (!username || !displayName) {
+                showMessage('Please enter both username and display name for registration.', 'error');
+                return;
+            }
+
+            try {
+                console.log('Fetching registration options from server...');
+                const respOptions = await fetch('http://localhost:8080/webauthn/register/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, displayName }),
+                });
+
+                if (!handleFetchError(respOptions, "fetching registration options")) return;
+                const optionsFromServer = await respOptions.json();
+                console.log('Received registration options:', optionsFromServer);
+
+                let attResp;
+                try {
+                    if (!optionsFromServer.publicKey) throw new Error("publicKey field missing in server options.");
+                    const actualCreationOptions = optionsFromServer.publicKey;
+                    showMessage('Please interact with your authenticator...', 'info');
+                    attResp = await startRegistration({ optionsJSON: actualCreationOptions });
+                    console.log('Authenticator registration response:', attResp);
+                } catch (error) {
+                    handleWebAuthnError(error, "registration with authenticator");
+                    return;
+                }
+
+                console.log('Sending attestation to /register/finish...');
+                const verificationResp = await fetch('http://localhost:8080/webauthn/register/finish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(attResp),
+                });
+
+                if (!handleFetchError(verificationResp, "sending registration to server")) return;
+                const verificationJSON = await verificationResp.json();
+
+                if (verificationJSON && verificationJSON.success) {
+                    showMessage(`Registration successful for ${verificationJSON.username}! You can now try logging in.`, 'success');
+                    showView('login');
+                } else {
+                    showMessage(`Server verification failed: ${verificationJSON.error || 'Unknown error.'}`, 'error');
+                }
+            } catch (fetchError) {
+                console.error('Network/Fetch error during registration:', fetchError);
+                showMessage('Network error. Could not connect to server.', 'error');
+            }
+        });
+
+        btnLogin.addEventListener('click', async () => {
+            showMessage('');
+            const username = elemAuthUsername.value || null;
+
+            try {
+                console.log('Fetching authentication options from server...');
+                const requestBody = {};
+                if (username) {
+                    requestBody.username = username;
+                }
+
+                const respOptions = await fetch('http://localhost:8080/webauthn/authentication/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined, 
+                });
+
+                if (!handleFetchError(respOptions, "fetching authentication options")) return;
+                const optionsFromServer = await respOptions.json();
+                console.log('Received authentication options:', optionsFromServer);
+
+                let assertResp;
+                try {
+                    if (!optionsFromServer.publicKey) throw new Error("publicKey field missing in server options.");
+                    const actualAuthOptions = optionsFromServer.publicKey;
+                    showMessage('Please interact with your authenticator to log in...', 'info');
+                    assertResp = await startAuthentication({ optionsJSON: actualAuthOptions });
+                    console.log('Authenticator authentication response:', assertResp);
+                } catch (error) {
+                    handleWebAuthnError(error, "authentication with authenticator");
+                    return;
+                }
+
+                console.log('Sending assertion to /authentication/finish...');
+                const verificationResp = await fetch('http://localhost:8080/webauthn/authentication/finish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(assertResp),
+                });
+
+                if (!handleFetchError(verificationResp, "sending authentication to server")) return;
+                const verificationJSON = await verificationResp.json();
+
+                if (verificationJSON && verificationJSON.success) {
+                    loggedInUsernameSpan.textContent = verificationJSON.username;
+                    showView('loggedIn');
+                    showMessage(`Login successful for ${verificationJSON.username}!`, 'success');
+                } else {
+                    showMessage(`Server authentication failed: ${verificationJSON.error || 'Unknown error.'}`, 'error');
+                }
+            } catch (fetchError) {
+                console.error('Network/Fetch error during authentication:', fetchError);
+                showMessage('Network error. Could not connect to server.', 'error');
+            }
+        });
+
+        // --- HELPER FUNCTIONS ---
+        async function handleFetchError(response, actionDescription) {
+            if (!response.ok) {
+                let errorMsg = `Error ${actionDescription} (HTTP ${response.status})`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg += `: ${errorData.error || response.statusText}`;
+                } catch (e) { /* ignore if response body is not JSON */ }
+                console.error(errorMsg, response);
+                showMessage(errorMsg, 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function handleWebAuthnError(error, actionDescription) {
+            console.error(`Error during ${actionDescription}:`, error);
+            let errorMessage = error.message || `An unknown error occurred during ${actionDescription}.`;
+            if (error.name === 'InvalidStateError') {
+                errorMessage = `Error: Authenticator invalid state during ${actionDescription}.`;
+            } else if (error.name === 'NotAllowedError') {
+                errorMessage = `Error: The ${actionDescription} operation was not allowed, timed out, or cancelled.`;
+            } else if (error.name === 'SecurityError') {
+                errorMessage = `SecurityError: ${error.message}. Ensure origin and RP ID match.`;
+            }
+            showMessage(errorMessage, 'error');
+        }
+
+        function showMessage(message, type = 'info') {
+            messageArea.innerHTML = '';
+            if (!message) return;
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.className = 'message px-4 py-3 rounded relative';
+            if (type === 'success') {
+                messageDiv.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
+            } else if (type === 'error') {
+                messageDiv.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
+            } else {
+                messageDiv.classList.add('bg-blue-100', 'border', 'border-blue-400', 'text-blue-700');
+            }
+            messageArea.appendChild(messageDiv);
+        }
+
+        showView('register');
+    </script>
+
+</body>
+</html>
