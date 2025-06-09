@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="js/authentication-check.js" defer></script>
     <script src="js/manage-passkeys.js" defer></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <link rel="stylesheet" href="css/style.css" />
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -134,6 +135,7 @@
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-xl font-semibold text-gray-900">Passkeys</h2>
               <button
+                onclick="addPasskey()"
                 class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-gray-700 font-medium transition-colors"
               >
                 Add passkey
@@ -183,133 +185,11 @@
                 </p>
               </div>
             </div>
-
+            <!-- Displayed passkeys -->
             <div class="space-y-4">
-              <div
-                class="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-              >
-                <div class="flex items-center space-x-4">
-                  <svg
-                    width="32"
-                    height="33"
-                    viewBox="0 0 32 33"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M0 27.3334V22.6667C0 21.7223 0.243056 20.8542 0.729167 20.0626C1.21528 19.2709 1.86111 18.6667 2.66667 18.2501C4.38889 17.389 6.13889 16.7431 7.91667 16.3126C9.69444 15.882 11.5 15.6667 13.3333 15.6667C13.8889 15.6667 14.4444 15.6876 15 15.7292C15.5556 15.7709 16.1111 15.8334 16.6667 15.9167C16.5556 17.5279 16.8472 19.0487 17.5417 20.4792C18.2361 21.9098 19.25 23.0834 20.5833 24.0001V27.3334H0ZM13.3333 14.0001C11.5 14.0001 9.93056 13.3473 8.625 12.0417C7.31944 10.7362 6.66667 9.16675 6.66667 7.33341C6.66667 5.50008 7.31944 3.93064 8.625 2.62508C9.93056 1.31953 11.5 0.666748 13.3333 0.666748C15.1667 0.666748 16.7361 1.31953 18.0417 2.62508C19.3472 3.93064 20 5.50008 20 7.33341C20 9.16675 19.3472 10.7362 18.0417 12.0417C16.7361 13.3473 15.1667 14.0001 13.3333 14.0001Z"
-                      fill="#0070AD"
-                    />
-                    <path
-                      d="M26.6667 32.3334L24.1667 29.8334V22.0834C22.9444 21.7223 21.9444 21.0348 21.1667 20.0209C20.3889 19.007 20 17.8334 20 16.5001C20 14.889 20.5694 13.514 21.7083 12.3751C22.8472 11.2362 24.2222 10.6667 25.8333 10.6667C27.4444 10.6667 28.8194 11.2362 29.9583 12.3751C31.0972 13.514 31.6667 14.889 31.6667 16.5001C31.6667 17.7501 31.3125 18.8612 30.6042 19.8334C29.8958 20.8056 29 21.5001 27.9167 21.9167L30 24.0001L27.5 26.5001L30 29.0001L26.6667 32.3334ZM25.8333 17.3334C26.3056 17.3334 26.7014 17.1737 27.0208 16.8542C27.3403 16.5348 27.5 16.139 27.5 15.6667C27.5 15.1945 27.3403 14.7987 27.0208 14.4792C26.7014 14.1598 26.3056 14.0001 25.8333 14.0001C25.3611 14.0001 24.9653 14.1598 24.6458 14.4792C24.3264 14.7987 24.1667 15.1945 24.1667 15.6667C24.1667 16.139 24.3264 16.5348 24.6458 16.8542C24.9653 17.1737 25.3611 17.3334 25.8333 17.3334Z"
-                      fill="#FF4019"
-                    />
-                  </svg>
-                  <div>
-                    <h3 class="font-medium text-gray-900">Bitwarden</h3>
-                    <p class="text-sm text-gray-500">
-                      Added on Mar 18, 2025 | Last used 3 hours ago
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <button
-                    class="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-600 transition-colors"
-                    onclick="editPasskey('bitwarden')"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height="24px"
-                      viewBox="0 -960 960 960"
-                      width="24px"
-                      fill="#12ABDB"
-                    >
-                      <path
-                        d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    class="p-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-red-600 transition-colors"
-                    onclick="deletePasskey('bitwarden')"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height="24px"
-                      viewBox="0 -960 960 960"
-                      width="24px"
-                      fill="#F53B53"
-                    >
-                      <path
-                        d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+            <div id="passkeyContainer" class="space-y-4">
+            </div>
 
-              <div
-                class="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-              >
-                <div class="flex items-center space-x-4">
-                  <svg
-                    width="32"
-                    height="33"
-                    viewBox="0 0 32 33"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M0 27.3334V22.6667C0 21.7223 0.243056 20.8542 0.729167 20.0626C1.21528 19.2709 1.86111 18.6667 2.66667 18.2501C4.38889 17.389 6.13889 16.7431 7.91667 16.3126C9.69444 15.882 11.5 15.6667 13.3333 15.6667C13.8889 15.6667 14.4444 15.6876 15 15.7292C15.5556 15.7709 16.1111 15.8334 16.6667 15.9167C16.5556 17.5279 16.8472 19.0487 17.5417 20.4792C18.2361 21.9098 19.25 23.0834 20.5833 24.0001V27.3334H0ZM13.3333 14.0001C11.5 14.0001 9.93056 13.3473 8.625 12.0417C7.31944 10.7362 6.66667 9.16675 6.66667 7.33341C6.66667 5.50008 7.31944 3.93064 8.625 2.62508C9.93056 1.31953 11.5 0.666748 13.3333 0.666748C15.1667 0.666748 16.7361 1.31953 18.0417 2.62508C19.3472 3.93064 20 5.50008 20 7.33341C20 9.16675 19.3472 10.7362 18.0417 12.0417C16.7361 13.3473 15.1667 14.0001 13.3333 14.0001Z"
-                      fill="#0070AD"
-                    />
-                    <path
-                      d="M26.6667 32.3334L24.1667 29.8334V22.0834C22.9444 21.7223 21.9444 21.0348 21.1667 20.0209C20.3889 19.007 20 17.8334 20 16.5001C20 14.889 20.5694 13.514 21.7083 12.3751C22.8472 11.2362 24.2222 10.6667 25.8333 10.6667C27.4444 10.6667 28.8194 11.2362 29.9583 12.3751C31.0972 13.514 31.6667 14.889 31.6667 16.5001C31.6667 17.7501 31.3125 18.8612 30.6042 19.8334C29.8958 20.8056 29 21.5001 27.9167 21.9167L30 24.0001L27.5 26.5001L30 29.0001L26.6667 32.3334ZM25.8333 17.3334C26.3056 17.3334 26.7014 17.1737 27.0208 16.8542C27.3403 16.5348 27.5 16.139 27.5 15.6667C27.5 15.1945 27.3403 14.7987 27.0208 14.4792C26.7014 14.1598 26.3056 14.0001 25.8333 14.0001C25.3611 14.0001 24.9653 14.1598 24.6458 14.4792C24.3264 14.7987 24.1667 15.1945 24.1667 15.6667C24.1667 16.139 24.3264 16.5348 24.6458 16.8542C24.9653 17.1737 25.3611 17.3334 25.8333 17.3334Z"
-                      fill="#FF4019"
-                    />
-                  </svg>
-                  <div>
-                    <h3 class="font-medium text-gray-900">Windows Hello</h3>
-                    <p class="text-sm text-gray-500">
-                      Added on Apr 1, 2025 | Last used 2 days ago
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <button
-                    class="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-600 transition-colors"
-                    onclick="openRenameModal()"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height="24px"
-                      viewBox="0 -960 960 960"
-                      width="24px"
-                      fill="#12ABDB"
-                    >
-                      <path
-                        d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    class="p-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-red-600 transition-colors"
-                    onclick="deletePasskey('bitwarden')"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height="24px"
-                      viewBox="0 -960 960 960"
-                      width="24px"
-                      fill="#F53B53"
-                    >
-                      <path
-                        d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
