@@ -140,7 +140,7 @@ async function addPasskey() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({}) // Empty body for adding passkey to existing user
+      body: JSON.stringify({})
     });
 
     if (!optionsResponse.ok) {
@@ -150,7 +150,7 @@ async function addPasskey() {
     const optionsFromServer = await optionsResponse.json();
     console.log("Received registration options:", optionsFromServer);
 
-    // Start WebAuthn registration
+    // Start passkey registration
     let attResp;
     try {
       if (!optionsFromServer.publicKey) {
@@ -185,7 +185,7 @@ async function addPasskey() {
     
     if (result && result.success) {
       showSuccessNotification("New passkey added successfully!");
-      loadUserPasskeys(); // Reload the passkeys to reflect changes
+      loadUserPasskeys();
     } else {
       throw new Error(result.error || "Registration failed");
     }

@@ -179,13 +179,24 @@ btnRegister.addEventListener("click", async () => {
 
     const verificationJSON = await verificationResp.json();
 
-    if (verificationJSON && verificationJSON.success) {
-      showMessage(
-        `Registration successful for ${verificationJSON.username}! You can now try logging in.`,
-        "success"
-      );
-      showLogin(); // This is where the screen switches to the login screen after registration
-    } else {
+if (verificationJSON && verificationJSON.success) {
+  if (verificationJSON.autoLogin) {
+    showMessage(
+      `Registration successful! Welcome ${verificationJSON.username}! Redirecting to your account...`,
+      "success"
+    );
+    
+    setTimeout(() => {
+      window.location.href = "settings.html";
+    }, 1500);
+  } else {
+    showMessage(
+      `Registration successful for ${verificationJSON.username}! You can now try logging in.`,
+      "success"
+    );
+    showLogin();
+  }
+} else {
       showMessage(
         `Server verification failed: ${
           verificationJSON.error || "Unknown error."
